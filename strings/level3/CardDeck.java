@@ -33,7 +33,7 @@ public class CardDeck {
             System.out.println("The cards cannot be evenly distributed among players.");
             return null;
         }
-
+    
         String[][] players = new String[numPlayers][numCards / numPlayers];
 
         int cardIndex = 0;
