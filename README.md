@@ -1,4 +1,4 @@
-# university-java-learning-program
+# University-Java-learning-Program-STEP
 
 A curated repository of solved Java programming problems from BridgeLabz Foundations classes. This resource is organized for easy reference by topic and difficulty, supporting university coursework and self-study.
 
