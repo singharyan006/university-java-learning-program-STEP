@@ -1,24 +1,24 @@
 # university-java-learning-program
 
-A comprehensive Java learning repository curated for university-level coursework and self-study. This resource is structured to help learners master core Java programming concepts through a progressive, hands-on approach, with content designed and delivered by members of BridgeLabz Foundations.
+A curated repository of solved Java programming problems from BridgeLabz Foundations classes. This resource is organized for easy reference by topic and difficulty, supporting university coursework and self-study.
 
-## Overview
+## About
 
-This repository offers a structured path for learning Java, covering essential topics such as basic programming, control flow, arrays, strings, and methods. Each topic is organized into three progressive levels, enabling learners to build foundational knowledge before advancing to more complex concepts.
+This repository contains only **solved Java problems**—not tutorials or conceptual explanations. Solutions cover basic programming, control flow, arrays, strings, and methods, each divided into three levels of difficulty.
 
 ## Features
 
-- Pure Java codebase for clarity and portability
-- Covers:
+- 100% Java codebase for clarity and portability
+- Topics include:
     - **Basic Programming**
     - **Control Flow**
     - **Arrays**
     - **Strings**
     - **Methods**
-- Each topic structured into **three levels** (Beginner, Intermediate, Advanced)
-- Practical exercises and real-world examples
-- Clear folder organization for easy navigation
-- Ideal for:
+- Each topic is structured into **three levels** (Beginner, Intermediate, Advanced)
+- All entries are fully solved problems
+- Clear folder organization for quick access
+- Useful as a code reference for:
     - University students
     - Self-learners
     - Academic instructors
@@ -46,12 +46,13 @@ cd university-java-learning-program
 2. **Open in your preferred Java IDE:**
 Supported IDEs include IntelliJ IDEA, Eclipse, NetBeans, and others.
 3. **Browse the modules:**
-Start with Level 1 of any topic and progress at your own pace.
+Navigate by topic and level to view solved problems.
 
 ## About the Classes
 
-All materials and exercises are based on classes conducted by BridgeLabz Foundations, ensuring practical relevance and alignment with current industry standards.
+All solutions are based on exercises from classes conducted by BridgeLabz Foundations.
 
 ## License
 
 *No license information provided.*
+
