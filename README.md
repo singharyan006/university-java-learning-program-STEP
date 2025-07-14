@@ -39,7 +39,7 @@ This repository contains only **solved Java problems**—not tutorials or concep
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/singharyan006/university-java-learning-program.git
+git clone https://github.com/singharyan006/university-java-learning-program-STEP.git
 cd university-java-learning-program
 ```
 
