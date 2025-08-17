@@ -1,4 +1,4 @@
-# university-java-learning-program
+# University-Java-learning-Program-STEP
 
 A curated repository of solved Java programming problems from BridgeLabz Foundations classes. This resource is organized for easy reference by topic and difficulty, supporting university coursework and self-study.
 
@@ -39,7 +39,7 @@ This repository contains only **solved Java problems**—not tutorials or concep
 1. **Clone the repository:**
 
 ```bash
-git clone https://github.com/singharyan006/university-java-learning-program.git
+git clone https://github.com/singharyan006/university-java-learning-program-STEP.git
 cd university-java-learning-program
 ```
 
