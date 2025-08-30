@@ -54,5 +54,5 @@ All solutions are based on exercises from classes conducted by BridgeLabz Founda
 
 ## License
 
-*No license information provided.*
+[MIT LICENSE](LICENSE)
 
