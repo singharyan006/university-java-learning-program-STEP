@@ -45,7 +45,7 @@
 
 
 
-package com.company.security;
+// package com.company.security;
 
 public class AccessModifierDemo {
     // Fields with different access modifiers
