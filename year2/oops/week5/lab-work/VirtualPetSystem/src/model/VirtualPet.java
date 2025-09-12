@@ -81,10 +81,18 @@ public class VirtualPet {
     }
 
     private void updateEvolutionStage() {
-        // Placeholder for evolution logic
+        String[] stages = species.getEvolutionStages();
+        int currentStageIndex = age / 25; // Evolution every 25 age units
+        
+        if (currentStageIndex >= stages.length) {
+            currentStageIndex = stages.length - 1; // Max stage
+        }
+        
+        String newStage = stages[currentStageIndex];
+        System.out.println(petName + " is now in stage: " + newStage);
     }
 
-    String getInternalState() {
+    public String getInternalState() {
         return "Pet[" + petId + "] Name: " + petName + ", Age: " + age + ", Health: " + health + ", Happiness: " + happiness;
     }
 
@@ -97,7 +105,13 @@ public class VirtualPet {
     }
 
     private void checkEvolution() {
-        // Placeholder for evolution check logic
+        // Check if pet should evolve based on age and happiness
+        if (happiness >= 80 && age % 25 == 0 && age > 0) {
+            updateEvolutionStage();
+            // Bonus stats for evolution
+            health = Math.min(MAX_HEALTH, health + 10);
+            System.out.println(petName + " gained health from evolution!");
+        }
     }
 
     @Override
