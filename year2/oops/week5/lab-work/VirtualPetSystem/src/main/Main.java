@@ -50,13 +50,39 @@ public class Main {
         System.out.println(robot.getInternalState());
         System.out.println();
 
-        // Test evolution
+        // Test evolution with proper progression
         System.out.println("4. Evolution Test:");
         VirtualPet evolvingPet = new VirtualPet("Evolvo");
+        System.out.println("Initial state: " + evolvingPet.getInternalState());
+        
+        // Build up happiness first
         evolvingPet.setHappiness(85);
-        evolvingPet.setAge(25); // Should trigger evolution
-        evolvingPet.playWithPet("Fetch"); // This will trigger checkEvolution
-        System.out.println(evolvingPet.getInternalState());
+        System.out.println("After happiness boost: " + evolvingPet.getInternalState());
+        
+        // Age the pet to trigger evolution
+        for (int i = 1; i <= 25; i++) {
+            evolvingPet.setAge(i);
+            if (i == 25) {
+                evolvingPet.playWithPet("Fetch"); // This will trigger checkEvolution at age 25
+            }
+        }
+        System.out.println("Final evolved state: " + evolvingPet.getInternalState());
+        
+        // Test polymorphism with array of different pets
+        System.out.println("\n5. Polymorphism Test:");
+        VirtualPet[] pets = {
+            new VirtualPet("Basic Pet"),
+            new DragonPet("Flame", "Fire Dragon", "Flame Breath"),
+            new RobotPet("Robo", new PetSpecies("Robot", new String[]{"Boot", "Active"}, 5000, "Lab"), false, 90)
+        };
+        
+        System.out.println("Feeding all pets the same food:");
+        for (VirtualPet pet : pets) {
+            System.out.println("Feeding " + pet.getPetName() + ":");
+            pet.feedPet("Meat"); // Each pet handles this differently
+            System.out.println(pet.getInternalState());
+            System.out.println();
+        }
 
         System.out.println("\n=== DEMO COMPLETE ===");
     }
