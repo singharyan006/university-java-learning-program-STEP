@@ -1,2 +1,4 @@
-*.class
+﻿*.class
 run.bat
+*.iml
+.idea/
