@@ -1,118 +1,98 @@
-import java.util.*;
-
 public class MiniMarkDownBracketCleaner {
+    private static boolean isOpen(char c) {
+        return c == '(' || c == '[' || c == '{' || c == '<';
+    }
+    private static boolean isClose(char c) {
+        return c == ')' || c == ']' || c == '}' || c == '>';
+    }
+    private static char matchOpen(char c) {
+        switch (c) {
+            case ')': return '(';
+            case ']': return '[';
+            case '}': return '{';
+            case '>': return '<';
+            default: return 0;
+        }
+    }
+    private static char matchClose(char c) {
+        switch (c) {
+            case '(': return ')';
+            case '[': return ']';
+            case '{': return '}';
+            case '<': return '>';
+            default: return 0;
+        }
+    }
+    public static String cleanBrackets(String s) {
+        if (s == null || s.isEmpty()) return "";
 
-    public String cleanMarkdownBrackets(String s) {
-        int n = s.length();
-        char[] chars = s.toCharArray();
-        boolean[] keep = new boolean[n];
+        char[] arr = s.toCharArray();
+        int n = arr.length;
+        boolean[] valid = new boolean[n];
 
-        // Stacks for each bracket type
-        Map<Character, Stack<Integer>> openers = new HashMap<>();
-        openers.put('(', new Stack<>());
-        openers.put('[', new Stack<>());
-        openers.put('{', new Stack<>());
-        openers.put('<', new Stack<>());
+        int[] openStack = new int[n];
+        int openTop = -1;
 
-        Map<Character, Character> match = Map.of(
-            ')', '(', ']', '[', '}', '{', '>', '<'
-        );
-
-        Stack<Integer> stars = new Stack<>();
-
+        int[] starStack = new int[n];
+        int starTop = -1;
 
         for (int i = 0; i < n; i++) {
-            char c = chars[i];
-            if (openers.containsKey(c)) {
-                openers.get(c).push(i);
+            char c = arr[i];
+
+            if (!isOpen(c) && !isClose(c) && c != '*') {
+                valid[i] = true;
+                continue;
+            }
+
+            if (isOpen(c)) {
+                openStack[++openTop] = i;
             } else if (c == '*') {
-                stars.push(i);
-            } else if (match.containsKey(c)) {
-                char opener = match.get(c);
-                Stack<Integer> stack = openers.get(opener);
-                if (!stack.isEmpty()) {
-                    keep[stack.pop()] = true;
-                    keep[i] = true;
-                } else if (!stars.isEmpty()) {
-                    keep[stars.pop()] = true;
-                    keep[i] = true;
+                boolean literal = (i > 0 && Character.isLetterOrDigit(arr[i - 1])) ||
+                                  (i + 1 < n && Character.isLetterOrDigit(arr[i + 1]));
+                if (literal) {
+                    valid[i] = true;
+                } else {
+                    starStack[++starTop] = i;
                 }
-                
+            } else if (isClose(c)) {
+                if (openTop >= 0 && arr[openStack[openTop]] == matchOpen(c)) {
+                    valid[i] = true;
+                    valid[openStack[openTop--]] = true;
+                } else if (starTop >= 0) {
+                    int starIdx = starStack[starTop--];
+                    arr[starIdx] = matchOpen(c);
+                    valid[i] = true;
+                    valid[starIdx] = true;
+                }
+            }
+       }
+        // close remaining opens using stars after them
+        while (openTop >= 0 && starTop >= 0) {
+            int openIdx = openStack[openTop];
+            int starIdx = starStack[starTop];
+            if (starIdx > openIdx) {
+                valid[openIdx] = valid[starIdx] = true;
+                arr[starIdx] = matchClose(arr[openIdx]);
+                openTop--;
+                starTop--;
             } else {
-                keep[i] = true; // letters and spaces
+                openTop--;
             }
         }
-
-        // Second pass: match remaining openers with stars
-        for (char opener : openers.keySet()) {
-            Stack<Integer> stack = openers.get(opener);
-            while (!stack.isEmpty() && !stars.isEmpty()) {
-                int openIdx = stack.pop();
-                int starIdx = stars.pop();
-                keep[openIdx] = true;
-                keep[starIdx] = true;
-            }
-        }
-
-        // Build final string (include matched stars)
+        // build the final string for printing using string builder
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < n; i++) {
-            if (keep[i]) {
-                sb.append(chars[i]);
-            }
+            if (!valid[i]) continue;
+            if (arr[i] != '*') sb.append(arr[i]); // remove stray *
         }
 
-        // Final validation
-        if (!isValid(sb.toString())) return "";
         return sb.toString();
     }
-
-    private boolean isValid(String s) {
-        Stack<Character> stack = new Stack<>();
-        Map<Character, Character> match = Map.of(
-            ')', '(', ']', '[', '}', '{', '>', '<'
-        );
-        for (char c : s.toCharArray()) {
-            if ("([{<*".indexOf(c) >= 0) {  // Include * as opener
-                stack.push(c);
-            } else if (match.containsKey(c)) {
-                if (stack.isEmpty()) return false;
-                char top = stack.pop();
-                // Star matches any closer
-                if (top == '*') continue;
-                // Otherwise check exact match
-                if (top != match.get(c)) return false;
-            }
-        }
-        return stack.isEmpty();
-    }
-
     public static void main(String[] args) {
-        MiniMarkDownBracketCleaner cleaner = new MiniMarkDownBracketCleaner();
-
-        String input1 = "The sum is (a[b*c] + d)";
-        String input2 = "<[*(])>";
-        String input3 = "hello*)(";
-        String input4 = "*{[a + b]*}c<d>";
-        String input5 = "*]*[";
-
-        System.out.println("Input: " + input1);
-        System.out.println("Output: " + cleaner.cleanMarkdownBrackets(input1));
-        System.out.println();
-
-        System.out.println("Input: " + input2);
-        System.out.println("Output: " + cleaner.cleanMarkdownBrackets(input2));
-        System.out.println();
-
-        System.out.println("Input: " + input3);
-        System.out.println("Output: " + cleaner.cleanMarkdownBrackets(input3));
-        System.out.println();
-
-        System.out.println("Input: " + input4);
-        System.out.println("Output: " + cleaner.cleanMarkdownBrackets(input4));
-        System.out.println();
-
-        System.out.println("Input: " + input5);
-        System.out.println("Output: " + cleaner.cleanMarkdownBrackets(input5));
+        System.out.println(cleanBrackets("The sum is (a[b*c] + d)"));
+        System.out.println(cleanBrackets("<[*(])>"));
+        System.out.println(cleanBrackets("hello*)("));
+        System.out.println(cleanBrackets("(<a[>]b)"));
+        System.out.println(cleanBrackets("a(b[c<d>])e"));
     }
 }
