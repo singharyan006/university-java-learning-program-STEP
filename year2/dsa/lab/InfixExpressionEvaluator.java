@@ -2,154 +2,211 @@ import java.util.*;
 import java.util.regex.*;
 
 public class InfixExpressionEvaluator {
+    private static final Set<String> FUNCTIONS = Set.of("min", "max", "abs");
+    private static final Set<String> OPERATORS = Set.of("+", "-", "*", "/", "%", "^");
+    private static final Map<String, Integer> PRECEDENCE = Map.of(
+            "+", 1, "-", 1,
+            "*", 2, "/", 2, "%", 2,
+            "^", 3,
+            "u-", 4  // unary minus has highest precedence
+    );
+    private static final Set<String> RIGHT_ASSOC = Set.of("^", "u-");
 
-    public static int evaluate(String expr, Map<String, Integer> env) {
-        try {
-            List<String> rpn = toRPN(expr, env);
-            return evalRPN(rpn, env);
-        } catch (Exception e) {
-            return Integer.MIN_VALUE; // Use Integer.MIN_VALUE to represent ERROR
-        }
+    private final Map<String, Integer> env;
+
+    public InfixExpressionEvaluator(Map<String, Integer> env) {
+        this.env = env;
     }
 
-    private static List<String> toRPN(String expr, Map<String, Integer> env) throws Exception {
-        List<String> output = new ArrayList<>();
-        Stack<String> ops = new Stack<>();
-        StringTokenizer tokens = new StringTokenizer(expr, "+-*/%^(),", true);
-        String prev = "";
-        while (tokens.hasMoreTokens()) {
-            String token = tokens.nextToken().trim();
-            if (token.isEmpty()) continue;
+    private boolean isOperator(String token) {
+        return OPERATORS.contains(token) || token.equals("u-");
+    }
 
-            if (isNumber(token) || isVariable(token)) {
+    private boolean isFunction(String token) {
+        return FUNCTIONS.contains(token);
+    }
+
+    private int getPrecedence(String op) {
+        return PRECEDENCE.getOrDefault(op, -1);
+    }
+
+    private boolean isRightAssociative(String op) {
+        return RIGHT_ASSOC.contains(op);
+    }
+
+    // Tokenize input expression into list of tokens
+    private List<String> tokenize(String expr) throws Exception {
+        List<String> tokens = new ArrayList<>();
+        Pattern pattern = Pattern.compile("\\d+|[a-zA-Z_]+|\\S");
+        Matcher matcher = pattern.matcher(expr);
+        while (matcher.find()) {
+            tokens.add(matcher.group());
+        }
+        return tokens;
+    }
+
+    // Convert infix tokens to RPN using Shunting-Yard algorithm
+    private List<String> toRPN(List<String> tokens) throws Exception {
+        List<String> output = new ArrayList<>();
+        Deque<String> stack = new ArrayDeque<>();
+
+        String prevToken = null;
+
+        for (String token : tokens) {
+            if (token.matches("\\d+")) {
                 output.add(token);
-            } else if (isFunction(token)) {
-                ops.push(token);
+                prevToken = "operand";
+            } else if (token.matches("[a-zA-Z_]+")) {
+                if (isFunction(token)) {
+                    stack.push(token);
+                    prevToken = "func";
+                } else {
+                    // Variable
+                    output.add(token);
+                    prevToken = "operand";
+                }
             } else if (token.equals(",")) {
-                while (!ops.isEmpty() && !ops.peek().equals("(")) {
-                    output.add(ops.pop());
+                while (!stack.isEmpty() && !stack.peek().equals("(")) {
+                    output.add(stack.pop());
                 }
-                if (ops.isEmpty()) throw new Exception("ERROR");
-            } else if (isOperator(token)) {
-                while (!ops.isEmpty() && precedence(ops.peek()) >= precedence(token)) {
-                    output.add(ops.pop());
+                if (stack.isEmpty() || !stack.peek().equals("(")) {
+                    throw new Exception("ERROR");
                 }
-                ops.push(token);
+                prevToken = "comma";
             } else if (token.equals("(")) {
-                ops.push(token);
+                stack.push(token);
+                prevToken = "left_paren";
             } else if (token.equals(")")) {
-                while (!ops.isEmpty() && !ops.peek().equals("(")) {
-                    output.add(ops.pop());
+                while (!stack.isEmpty() && !stack.peek().equals("(")) {
+                    output.add(stack.pop());
                 }
-                if (ops.isEmpty()) throw new Exception("ERROR");
-                ops.pop(); // pop '('
-                if (!ops.isEmpty() && isFunction(ops.peek())) {
-                    output.add(ops.pop());
+                if (stack.isEmpty()) {
+                    throw new Exception("ERROR");
                 }
+                stack.pop(); // remove '('
+                if (!stack.isEmpty() && isFunction(stack.peek())) {
+                    output.add(stack.pop());
+                }
+                prevToken = "right_paren";
+            } else if (isOperator(token)) {
+                // unary minus handling
+                if (token.equals("-") && (prevToken == null || prevToken.equals("operator") ||
+                        prevToken.equals("left_paren") || prevToken.equals("comma"))) {
+                    token = "u-";
+                }
+                while (!stack.isEmpty() && isOperator(stack.peek())) {
+                    String top = stack.peek();
+                    int topPrec = getPrecedence(top);
+                    int tokenPrec = getPrecedence(token);
+
+                    if ((topPrec > tokenPrec) ||
+                            (topPrec == tokenPrec && !isRightAssociative(token))) {
+                        output.add(stack.pop());
+                    } else {
+                        break;
+                    }
+                }
+                stack.push(token);
+                prevToken = "operator";
             } else {
                 throw new Exception("ERROR");
             }
-            prev = token;
         }
 
-        while (!ops.isEmpty()) {
-            String op = ops.pop();
-            if (op.equals("(") || op.equals(")")) throw new Exception("ERROR");
-            output.add(op);
+        while (!stack.isEmpty()) {
+            String top = stack.pop();
+            if (top.equals("(") || top.equals(")")) {
+                throw new Exception("ERROR");
+            }
+            output.add(top);
         }
-
         return output;
     }
 
-    private static int evalRPN(List<String> rpn, Map<String, Integer> env) throws Exception {
-        Stack<Integer> stack = new Stack<>();
+    // Evaluate RPN expression
+    private int evalRPN(List<String> rpn) throws Exception {
+        Deque<Integer> stack = new ArrayDeque<>();
+
         for (String token : rpn) {
-            if (isNumber(token)) {
+            if (token.matches("\\d+")) {
                 stack.push(Integer.parseInt(token));
-            } else if (isVariable(token)) {
-                if (!env.containsKey(token)) throw new Exception("ERROR");
+            } else if (env.containsKey(token)) {
                 stack.push(env.get(token));
             } else if (isOperator(token)) {
-                if (stack.size() < 2) throw new Exception("ERROR");
-                int b = stack.pop();
-                int a = stack.pop();
-                stack.push(applyOperator(a, b, token));
-            } else if (isFunction(token)) {
-                if (token.equals("abs")) {
+                if (token.equals("u-")) {
                     if (stack.isEmpty()) throw new Exception("ERROR");
-                    stack.push(Math.abs(stack.pop()));
+                    int val = stack.pop();
+                    stack.push(-val);
                 } else {
                     if (stack.size() < 2) throw new Exception("ERROR");
                     int b = stack.pop();
                     int a = stack.pop();
-                    if (token.equals("min")) stack.push(Math.min(a, b));
-                    else if (token.equals("max")) stack.push(Math.max(a, b));
-                    else throw new Exception("ERROR");
+                    stack.push(applyOp(token, a, b));
+                }
+            } else if (isFunction(token)) {
+                if (token.equals("abs")) {
+                    if (stack.isEmpty()) throw new Exception("ERROR");
+                    int val = stack.pop();
+                    stack.push(Math.abs(val));
+                } else if (token.equals("min") || token.equals("max")) {
+                    if (stack.size() < 2) throw new Exception("ERROR");
+                    int b = stack.pop();
+                    int a = stack.pop();
+                    stack.push(token.equals("min") ? Math.min(a, b) : Math.max(a, b));
+                } else {
+                    throw new Exception("ERROR");
                 }
             } else {
                 throw new Exception("ERROR");
             }
         }
+
         if (stack.size() != 1) throw new Exception("ERROR");
         return stack.pop();
     }
 
-    private static boolean isNumber(String token) {
-        return token.matches("-?\\d+");
-    }
-
-    private static boolean isVariable(String token) {
-        return token.matches("[a-zA-Z]\\w*");
-    }
-
-    private static boolean isFunction(String token) {
-        return token.equals("min") || token.equals("max") || token.equals("abs");
-    }
-
-    private static boolean isOperator(String token) {
-        return "+-*/%^".contains(token);
-    }
-
-    private static int precedence(String op) {
-        switch (op) {
-            case "^": return 4;
-            case "*": case "/": case "%": return 3;
-            case "+": case "-": return 2;
-            default: return 0;
-        }
-    }
-
-    private static int applyOperator(int a, int b, String op) throws Exception {
+    private int applyOp(String op, int a, int b) throws Exception {
         switch (op) {
             case "+": return a + b;
             case "-": return a - b;
             case "*": return a * b;
             case "/":
                 if (b == 0) throw new Exception("ERROR");
-                return a / b;
+                return a / b; // integer division truncates toward zero
             case "%":
                 if (b == 0) throw new Exception("ERROR");
                 return a % b;
-            case "^": return (int) Math.pow(a, b);
-            default: throw new Exception("ERROR");
+            case "^":
+                if (b < 0) throw new Exception("ERROR");
+                return (int)Math.pow(a, b);
+        }
+        throw new Exception("ERROR");
+    }
+
+    public String evaluate(String expr) {
+        try {
+            List<String> tokens = tokenize(expr);
+            List<String> rpn = toRPN(tokens);
+            int result = evalRPN(rpn);
+            return Integer.toString(result);
+        } catch (Exception e) {
+            return "ERROR";
         }
     }
 
-    // For testing
+    // For demonstration with your examples
     public static void main(String[] args) {
-        Map<String, Integer> env1 = new HashMap<>();
-        System.out.println(evaluate("3 + 4 * 2 / (1 - 5) ^ 2 ^ 3", env1)); // Output: 3
+        Map<String, Integer> env1 = new HashMap<>(); // empty
+        Map<String, Integer> env3 = Map.of("x", -2, "y", -7);
+        Map<String, Integer> env4 = Map.of("a", 1);
 
-        Map<String, Integer> env2 = new HashMap<>();
-        System.out.println(evaluate("min(10, max(2, 3*4))", env2)); // Output: 10
+        InfixExpressionEvaluator evaluator1 = new InfixExpressionEvaluator(env1);
+        InfixExpressionEvaluator evaluator3 = new InfixExpressionEvaluator(env3);
+        InfixExpressionEvaluator evaluator4 = new InfixExpressionEvaluator(env4);
 
-        Map<String, Integer> env3 = new HashMap<>();
-        env3.put("x", -2);
-        env3.put("y", -7);
-        System.out.println(evaluate("-(x) + abs(y)", env3)); // Output: 9
-
-        Map<String, Integer> env4 = new HashMap<>();
-        env4.put("a", 1);
-        System.out.println(evaluate("a + b", env4)); // Output: ERROR
+        System.out.println(evaluator1.evaluate("3 + 4 * 2 / (1 - 5) ^ 2^3"));          // Output: 3
+        System.out.println(evaluator1.evaluate("min(10, max(2, 3*4))"));              // Output: 10
+        System.out.println(evaluator3.evaluate("-(x) + abs(y)"));                     // Output: 9
+        System.out.println(evaluator4.evaluate("a + b"));                            // Output: ERROR
     }
 }
