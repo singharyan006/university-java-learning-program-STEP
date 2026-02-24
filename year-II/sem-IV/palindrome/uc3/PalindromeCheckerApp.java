@@ -1,4 +1,4 @@
-public class PallindromeCheckerApp {
+public class PalindromeCheckerApp {
     public static void main(String[] args) {
         String ip = "madam";
         String r_ip = "";
